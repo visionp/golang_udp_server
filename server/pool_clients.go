@@ -46,12 +46,13 @@ func (pool poolClients) HasClient(addrStr string) bool {
 	return ok
 }
 
-func (pool poolClients) AddClient(client client) bool {
-	addr := client.addr.String()
+func (pool poolClients) AddClient(c client) bool {
+	addr := c.addr.String()
 	has := pool.HasClient(addr)
 
 	if !has {
-		pool.list[addr] = client
+		pool.list[addr] = c
+		fmt.Println("Added new client to pool")
 	}
 
 	return has

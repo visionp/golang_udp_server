@@ -8,6 +8,7 @@ import (
 
 func Listen() {
 	fmt.Println("Start listen")
+	handlerFunc := handler{}
 
 	list := make(map[string]client)
 	poolClients := poolClients{list, false}
@@ -41,7 +42,6 @@ func Listen() {
 
 	requestCh := make(chan request, 200)
 	responseCh := make(chan response, 200)
-	handlerFunc := handler{}
 	disp := dispatcher{requestCh, responseCh, handlerFunc, poolClients}
 
 	defer func() {

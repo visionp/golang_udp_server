@@ -6,16 +6,12 @@ import (
 )
 
 type response struct {
-	addr   *net.UDPAddr
-	id     int64
-	status string
+	addr    *net.UDPAddr
+	payload map[string]string
 }
 
 func (res response) GetPayload() []byte {
-	data := make(map[string]string)
-	data["status"] = res.status
-
-	jsonData, err := json.Marshal(data)
+	jsonData, err := json.Marshal(res.payload)
 	if err != nil {
 		return []byte(err.Error())
 	}
