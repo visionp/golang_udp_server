@@ -44,11 +44,6 @@ func Listen() {
 	responseCh := make(chan response, 200)
 	disp := dispatcher{requestCh, responseCh, handlerFunc, poolClients}
 
-	defer func() {
-		close(requestCh)
-		close(responseCh)
-	}()
-
 	for w := 0; w < 100; w++ {
 		go disp.Dispatch()
 		go func() {
