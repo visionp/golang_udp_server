@@ -15,8 +15,9 @@ type client struct {
 }
 
 func (c client) UpdateLastActiveTime() {
+	before := strconv.FormatInt(c.lastActiveTime, 10)
 	c.lastActiveTime = time.Now().Unix()
-	fmt.Println("Updated last active time " + c.addr.String() + " Set: " + c.GetLastActiveTimeAsString())
+	fmt.Println("Updated last active time " + c.addr.String() + " BEFORE: " + before + " Set: " + c.GetLastActiveTimeAsString())
 }
 
 func (c client) GetLastActiveTimeAsString() string {

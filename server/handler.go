@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 )
@@ -14,9 +15,11 @@ type handler struct {
 
 func (h handler) Handle(req request, clients poolClients) response {
 	var cl client
+
 	if clients.HasClient(req.addr.String()) {
 		cl = clients.GetClient(req.addr.String())
 		cl.UpdateLastActiveTime()
+		fmt.Println(req.addr.String() + "  " + cl.GetLastActiveTimeAsString())
 	} else {
 		token := "token_" + req.addr.String()
 		cl = client{req.addr, token, time.Now().Unix(), 1}
