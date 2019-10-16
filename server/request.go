@@ -10,7 +10,7 @@ type request struct {
 	payload []byte
 }
 
-type payload interface{}
+type payload map[string]interface{}
 
 func (req request) GetPayload() (payload, error) {
 	var data payload

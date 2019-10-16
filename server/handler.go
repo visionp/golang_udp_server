@@ -2,8 +2,6 @@ package server
 
 import (
 	"fmt"
-	"strconv"
-	"time"
 )
 
 type handlerInterface interface {
@@ -16,21 +14,33 @@ type handler struct {
 func (h handler) Handle(req request, clients poolClients) response {
 	var cl client
 
+	payload := make(map[string]string)
+	data, _ := req.GetPayload()
+	action, ok := data["action"]
+
+	if ok && action == "ping" {
+		pid, _ := data["pid"]
+		payload["pid"] = fmt.Sprintf("%v", pid)
+	}
+
 	if clients.HasClient(req.addr.String()) {
 		cl = clients.GetClient(req.addr.String())
-		cl.UpdateLastActiveTime()
-		fmt.Println(req.addr.String() + "  " + cl.GetLastActiveTimeAsString())
 	} else {
-		token := "token_" + req.addr.String()
-		cl = client{req.addr, token, time.Now().Unix(), 1}
+		token, _ := data["pid"]
+
+		cl = client{req.addr, fmt.Sprintf("%v", token), 0, 0}
 		clients.AddClient(cl)
 	}
 
-	payload := make(map[string]string)
-	payload["token"] = cl.token
-	payload["last_active_time"] = cl.GetLastActiveTimeAsString()
-	payload["time"] = strconv.FormatInt(time.Now().Unix(), 10)
-	res := response{req.addr, payload}
+	cl.UpdateState()
 
-	return res
+	if cl.token != payload["pid"] {
+		fmt.Printf("%s != %s \n", cl.token, payload["pid"])
+	}
+
+	payload["last_active"] = cl.GetLastActiveTimeAsString()
+	payload["token"] = cl.token
+	payload["addr"] = cl.GetAddress().String()
+
+	return response{req.addr, payload}
 }

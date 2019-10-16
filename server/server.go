@@ -38,35 +38,32 @@ func Listen() {
 		}
 	}()
 
-	buffer := make([]byte, 1024)
-
-	requestCh := make(chan request, 200)
-	responseCh := make(chan response, 200)
+	requestCh := make(chan request, 1024)
+	responseCh := make(chan response, 1024)
 	disp := dispatcher{requestCh, responseCh, handlerFunc, poolClients}
 
-	for w := 0; w < 100; w++ {
-		go disp.Dispatch()
-		go func() {
-			for {
-				res := <-responseCh
-				_, err = connection.WriteToUDP(res.GetPayload(), res.addr)
-				if err != nil {
-					fmt.Println(err)
-				}
+	go func() {
+		disp.Dispatch()
+	}()
+	go func() {
+		for {
+			res := <-responseCh
+			_, err = connection.WriteToUDP(res.GetPayload(), res.addr)
+			if err != nil {
+				fmt.Println(err)
 			}
-		}()
-	}
+		}
+	}()
 
 	for {
+		buffer := make([]byte, 1024)
 		n, addr, err := connection.ReadFromUDP(buffer)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(0)
 		}
 
-		req := request{addr, buffer[:n]}
-
-		requestCh <- req
+		requestCh <- request{addr, buffer[:n]}
 	}
 
 }

@@ -13,7 +13,7 @@ type poolClients struct {
 
 func (pool poolClients) Init() error {
 	if pool.isInit != true {
-		ticker := time.NewTicker(time.Second * 5)
+		ticker := time.NewTicker(time.Second * 600)
 		go func() {
 			for t := range ticker.C {
 				countRemoved := pool.clean()
@@ -31,7 +31,7 @@ func (pool poolClients) clean() int {
 	for key, client := range pool.list {
 		diff := timeUnix - client.lastActiveTime
 
-		if diff > 10 {
+		if diff > 600 {
 			err := pool.RemoveByAddr(key)
 			if err == nil {
 				countCleaned++
