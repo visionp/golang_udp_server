@@ -4,39 +4,20 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"strconv"
-	"sync"
 )
 
-
-type data struct{
-	addr *net.UDPAddr
-	id int
-}
-
-type Counter struct {
-	count int
-}
-
-func (self Counter) currentValue() int {
-	return self.count
-}
-func (self *Counter) increment() {
-	self.count++
-}
-
-func h(d data, counter *Counter, mutex *sync.Mutex) data {
-	mutex.Lock()
-	fmt.Println("COUNTER " + strconv.Itoa(counter.currentValue()))
-	counter.increment()
-	mutex.Unlock()
-
-	return data{d.addr, d.id}
-}
-
 func Listen() {
-	PORT := ":3030"
+	fmt.Println("Start listen")
 
+	list := make(map[string]client)
+	poolClients := poolClients{list, false}
+	err := poolClients.Init()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	PORT := ":3030"
 	s, err := net.ResolveUDPAddr("udp4", PORT)
 	if err != nil {
 		fmt.Println(err)
@@ -49,48 +30,36 @@ func Listen() {
 		return
 	}
 
-	defer func () {
+	defer func() {
 		err = connection.Close()
 		if err != nil {
 			fmt.Println(err)
 		}
-	} ()
-
-	//var currentId int
-	//var lossPackets int
-	var mutex = &sync.Mutex{}
-	//m :=  make(map[string]int)
-	//receivePackets :=  make(map[string]int)
-	//
-	//countPackets := 0
-	buffer := make([]byte, 1024)
-
-	ch := make(chan data)
-	response := make(chan data)
-
-
-	defer func() {
-		close(ch);
-		close(response);
 	}()
 
-	counter := Counter{1}
+	buffer := make([]byte, 1024)
+
+	requestCh := make(chan request, 200)
+	responseCh := make(chan response, 200)
+	handlerFunc := handler{}
+	disp := dispatcher{requestCh, responseCh, handlerFunc, poolClients}
+
+	defer func() {
+		close(requestCh)
+		close(responseCh)
+	}()
 
 	for w := 0; w < 100; w++ {
+		go disp.Dispatch()
 		go func() {
 			for {
-				select {
-				case msg := <-ch:
-					response <- h(msg, &counter, mutex)
-				case msg := <-response:
-					d := strconv.Itoa(msg.id)
-					_, err = connection.WriteToUDP([]byte("Hello -> " + d), msg.addr)
-					if err != nil {
-						fmt.Println(err)
-					}
+				res := <-responseCh
+				_, err = connection.WriteToUDP(res.GetPayload(), res.addr)
+				if err != nil {
+					fmt.Println(err)
 				}
 			}
-		} ()
+		}()
 	}
 
 	for {
@@ -100,10 +69,9 @@ func Listen() {
 			os.Exit(0)
 		}
 
-		currentId, _ := strconv.Atoi(string(buffer[:n]))
+		req := request{addr, buffer[:n]}
 
-		ch <- data{addr, currentId}
+		requestCh <- req
 	}
-
 
 }

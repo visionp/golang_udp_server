@@ -1,9 +1,8 @@
 package main
 
 import (
-	"./server"
+	"udp/server"
 )
-
 
 func main() {
 	server.Listen()

@@ -7,12 +7,11 @@ import (
 )
 
 type poolClients struct {
-	list map[string]client
+	list   map[string]client
 	isInit bool
 }
 
 func (pool poolClients) Init() error {
-	pool.list = make(map[string]client)
 	if pool.isInit != true {
 		ticker := time.NewTicker(time.Minute * 10)
 		go func() {
@@ -20,7 +19,7 @@ func (pool poolClients) Init() error {
 				countRemoved := pool.clean()
 				fmt.Println("Pool cleaned: ", countRemoved, ", time ", t)
 			}
-		} ()
+		}()
 		pool.isInit = true
 	}
 	return nil
@@ -37,7 +36,6 @@ func (pool poolClients) clean() int {
 			if err == nil {
 				countCleaned++
 			}
-
 		}
 	}
 	return countCleaned
@@ -59,7 +57,7 @@ func (pool poolClients) AddClient(client client) bool {
 	return has
 }
 
-func (pool poolClients) GetClient(addrStr string) client{
+func (pool poolClients) GetClient(addrStr string) client {
 	if !pool.HasClient(addrStr) {
 		panic("Client not found")
 	}
