@@ -27,7 +27,7 @@ func (c *client) updateLastActiveTime() {
 }
 
 func (c *client) incCountRequest() {
-	c.countRequests += 1
+	c.countRequests++
 }
 
 func (c client) GetLastActiveTimeAsString() string {

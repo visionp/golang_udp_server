@@ -18,3 +18,7 @@ func (req request) GetPayload() (payload, error) {
 
 	return data, err
 }
+
+func (req request) GetPayloadAsString() string {
+	return string(req.payload)
+}

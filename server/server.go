@@ -4,14 +4,16 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"sync"
 )
 
 func Listen() {
 	list := make(map[string]*client)
-	handlerFunc := handler{}
+	mutex := &sync.Mutex{}
+	handlerFunc := handler{mutex}
 
 	poolClients := &poolClients{list, false}
-	err := poolClients.Init()
+	err := poolClients.Init(mutex)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -39,11 +41,11 @@ func Listen() {
 
 	requestCh := make(chan request, 1024)
 	responseCh := make(chan response, 1024)
-	disp := dispatcher{requestCh, responseCh, handlerFunc, poolClients}
+	disp := dispatcher{handlerFunc, poolClients}
 
-	go func() {
-		disp.Dispatch()
-	}()
+	for i := 0; i < 50; i++ {
+		go disp.Dispatch(requestCh, responseCh)
+	}
 
 	go func() {
 		for {

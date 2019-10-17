@@ -3,6 +3,7 @@ package server
 import (
 	"fmt"
 	"github.com/pkg/errors"
+	"sync"
 	"time"
 )
 
@@ -11,12 +12,14 @@ type poolClients struct {
 	isInit bool
 }
 
-func (pool poolClients) Init() error {
+func (pool poolClients) Init(mutex *sync.Mutex) error {
 	if pool.isInit != true {
-		ticker := time.NewTicker(time.Second * 600)
+		ticker := time.NewTicker(time.Second * 20)
 		go func() {
 			for t := range ticker.C {
+				mutex.Lock()
 				countRemoved := pool.clean()
+				mutex.Unlock()
 				fmt.Println("Pool cleaned: ", countRemoved, ", time ", t)
 			}
 		}()
@@ -31,7 +34,7 @@ func (pool poolClients) clean() int {
 	for key, client := range pool.list {
 		diff := timeUnix - client.lastActiveTime
 
-		if diff > 600 {
+		if diff > 20 {
 			err := pool.RemoveByAddr(key)
 			if err == nil {
 				countCleaned++
@@ -52,7 +55,7 @@ func (pool poolClients) AddClient(c *client) bool {
 
 	if !has {
 		pool.list[addr] = c
-		fmt.Printf("Added new client to pool %s \n", c.token)
+		//fmt.Printf("Added new client to pool %s \n", c.token)
 	}
 
 	return has
