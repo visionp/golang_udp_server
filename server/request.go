@@ -2,23 +2,44 @@ package server
 
 import (
 	"encoding/json"
+	"fmt"
 	"net"
 )
 
-type request struct {
+type Request struct {
 	addr    *net.UDPAddr
-	payload []byte
+	Payload []byte
 }
 
-type payload map[string]interface{}
+type Payload map[string]interface{}
 
-func (req request) GetPayload() (payload, error) {
-	var data payload
-	err := json.Unmarshal(req.payload, &data)
+func (req Request) GetPayload() (Payload, error) {
+	var data Payload
+	err := json.Unmarshal(req.Payload, &data)
 
 	return data, err
 }
 
-func (req request) GetPayloadAsString() string {
-	return string(req.payload)
+func (req Request) GetPayloadAsString() string {
+	return string(req.Payload)
+}
+
+func (req Request) GetAction() string {
+	data, _ := req.GetPayload()
+
+	action, ok := data["action"]
+
+	if ok {
+		return fmt.Sprintf("%v", action)
+	}
+
+	return "undefined"
+}
+
+func (req Request) GetAddr() *net.UDPAddr {
+	return req.addr
+}
+
+func (req Request) GetAddrAsString() string {
+	return req.addr.String()
 }

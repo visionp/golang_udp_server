@@ -5,22 +5,36 @@ import (
 	"net"
 	"os"
 	"sync"
+	"time"
 )
 
-func Listen() {
-	list := make(map[string]*client)
+type Server struct {
+	Handlers *HandlersCollection
+}
+
+func (server Server) Start(port string) {
+	fmt.Printf("Server listening on port %s", port)
+
 	mutex := &sync.Mutex{}
-	handlerFunc := handler{mutex}
+	list := make(map[string]*Client)
+	poolClients := &PoolClients{list}
 
-	poolClients := &poolClients{list, false}
-	err := poolClients.Init(mutex)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	disp := dispatcher{server.Handlers, poolClients, mutex}
+	requestCh := make(chan Request, 1024)
+	responseCh := make(chan Response, 1024)
 
-	PORT := ":3030"
-	s, err := net.ResolveUDPAddr("udp4", PORT)
+	ticker := time.NewTicker(time.Second * 20)
+
+	go func() {
+		for t := range ticker.C {
+			mutex.Lock()
+			countRemoved := poolClients.clean()
+			mutex.Unlock()
+			fmt.Println("Pool cleaned: ", countRemoved, ", time ", t)
+		}
+	}()
+
+	s, err := net.ResolveUDPAddr("udp4", port)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -38,10 +52,6 @@ func Listen() {
 			fmt.Println(err)
 		}
 	}()
-
-	requestCh := make(chan request, 1024)
-	responseCh := make(chan response, 1024)
-	disp := dispatcher{handlerFunc, poolClients}
 
 	for i := 0; i < 50; i++ {
 		go disp.Dispatch(requestCh, responseCh)
@@ -65,7 +75,7 @@ func Listen() {
 			os.Exit(0)
 		}
 
-		requestCh <- request{addr, buffer[:n]}
+		requestCh <- Request{addr, buffer[:n]}
 	}
 
 }

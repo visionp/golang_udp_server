@@ -5,12 +5,12 @@ import (
 	"net"
 )
 
-type response struct {
+type Response struct {
 	addr    *net.UDPAddr
-	payload map[string]string
+	payload Payload
 }
 
-func (res response) GetPayload() []byte {
+func (res Response) GetPayload() []byte {
 	jsonData, err := json.Marshal(res.payload)
 	if err != nil {
 		return []byte(err.Error())

@@ -1,38 +1,19 @@
 package server
 
 import (
-	"fmt"
 	"github.com/pkg/errors"
-	"sync"
 	"time"
 )
 
-type poolClients struct {
-	list   map[string]*client
-	isInit bool
+type PoolClients struct {
+	list map[string]*Client
 }
 
-func (pool poolClients) Init(mutex *sync.Mutex) error {
-	if pool.isInit != true {
-		ticker := time.NewTicker(time.Second * 20)
-		go func() {
-			for t := range ticker.C {
-				mutex.Lock()
-				countRemoved := pool.clean()
-				mutex.Unlock()
-				fmt.Println("Pool cleaned: ", countRemoved, ", time ", t)
-			}
-		}()
-		pool.isInit = true
-	}
-	return nil
-}
-
-func (pool poolClients) clean() int {
+func (pool PoolClients) clean() int {
 	timeUnix := time.Now().Unix()
 	countCleaned := 0
-	for key, client := range pool.list {
-		diff := timeUnix - client.lastActiveTime
+	for key, Client := range pool.list {
+		diff := timeUnix - Client.lastActiveTime
 
 		if diff > 20 {
 			err := pool.RemoveByAddr(key)
@@ -44,31 +25,31 @@ func (pool poolClients) clean() int {
 	return countCleaned
 }
 
-func (pool poolClients) HasClient(addrStr string) bool {
+func (pool PoolClients) HasClient(addrStr string) bool {
 	_, ok := pool.list[addrStr]
 	return ok
 }
 
-func (pool poolClients) AddClient(c *client) bool {
+func (pool PoolClients) AddClient(c *Client) bool {
 	addr := c.addr.String()
 	has := pool.HasClient(addr)
 
 	if !has {
 		pool.list[addr] = c
-		//fmt.Printf("Added new client to pool %s \n", c.token)
+		//fmt.Printf("Added new Client to pool %s \n", c.token)
 	}
 
 	return has
 }
 
-func (pool poolClients) GetClient(addrStr string) *client {
+func (pool PoolClients) GetClient(addrStr string) *Client {
 	if !pool.HasClient(addrStr) {
 		panic("Client not found")
 	}
 	return pool.list[addrStr]
 }
 
-func (pool poolClients) RemoveByAddr(addrStr string) error {
+func (pool PoolClients) RemoveByAddr(addrStr string) error {
 	if pool.HasClient(addrStr) {
 		delete(pool.list, addrStr)
 		return nil
@@ -76,6 +57,6 @@ func (pool poolClients) RemoveByAddr(addrStr string) error {
 	return errors.New("Client by this address is not found")
 }
 
-func (pool poolClients) RemoveByClient(client *client) error {
-	return pool.RemoveByAddr(client.addr.String())
+func (pool PoolClients) RemoveByClient(Client *Client) error {
+	return pool.RemoveByAddr(Client.addr.String())
 }

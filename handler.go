@@ -1,22 +1,19 @@
-package server
+package main
 
 import (
+	"./server"
 	"fmt"
 	"sync"
 )
 
-type handlerInterface interface {
-	Handle(req request, clients *poolClients) response
-}
-
-type handler struct {
+type handlerPing struct {
 	mutex *sync.Mutex
 }
 
-func (h handler) Handle(req request, clients *poolClients) response {
-	var cl *client
+func (h handlerPing) Handle(req server.Request, clients *server.PoolClients) server.Payload {
+	var cl *server.Client
 
-	payload := make(map[string]string)
+	payload := make(server.Payload)
 	data, _ := req.GetPayload()
 
 	action, ok := data["action"]
@@ -26,40 +23,39 @@ func (h handler) Handle(req request, clients *poolClients) response {
 	payload["pid"] = token
 
 	h.mutex.Lock()
-	hasClient := clients.HasClient(req.addr.String())
+	hasClient := clients.HasClient(req.GetAddrAsString())
 	h.mutex.Unlock()
 
 	if ok && action == "handshake" {
 		if hasClient {
 			h.mutex.Lock()
-			err := clients.RemoveByAddr(req.addr.String())
+			err := clients.RemoveByAddr(req.GetAddrAsString())
 			h.mutex.Unlock()
 			if err == nil {
-				hasClient = false
-				fmt.Printf("Remove client: %s \n", req.addr.String())
+				fmt.Printf("Remove client: %s \n", req.GetAddrAsString())
 			}
 		}
 	}
 
 	h.mutex.Lock()
-	if clients.HasClient(req.addr.String()) {
-		cl = clients.GetClient(req.addr.String())
+	if clients.HasClient(req.GetAddrAsString()) {
+		cl = clients.GetClient(req.GetAddrAsString())
 	} else {
-		cl = &client{req.addr, token, 0, 0}
+		cl = &server.Client{req.GetAddr(), token, 0, 0}
 		clients.AddClient(cl)
 	}
 	cl.UpdateState()
 	h.mutex.Unlock()
 
-	if cl.token != payload["pid"] {
-		fmt.Printf("Diff tokens %s != %s \n", cl.token, payload["pid"])
-	}
-
 	h.mutex.Lock()
 	ct := cl.GetCountRequestsAsString()
 	la := cl.GetLastActiveTimeAsString()
-	tk := cl.token
+	tk := cl.GetToken()
 	h.mutex.Unlock()
+
+	if tk != payload["pid"] {
+		fmt.Printf("Diff tokens %s != %s \n", cl.GetToken(), payload["pid"])
+	}
 	fmt.Printf("Received: %s -> %s Requests: %s  \n", req.GetPayloadAsString(), tk, ct)
 
 	payload["last_active"] = la
@@ -67,5 +63,5 @@ func (h handler) Handle(req request, clients *poolClients) response {
 	payload["count_requests"] = ct
 	payload["addr"] = cl.GetAddress().String()
 
-	return response{req.addr, payload}
+	return payload
 }

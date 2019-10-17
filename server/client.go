@@ -6,38 +6,46 @@ import (
 	"time"
 )
 
-type client struct {
+type Client struct {
 	addr           *net.UDPAddr
 	token          string
 	lastActiveTime int64
 	countRequests  int
 }
 
-func (c *client) UpdateState() {
+func (c *Client) UpdateState() {
 	c.incCountRequest()
 	c.updateLastActiveTime()
 }
 
-func (c *client) UpdateToken(token string) {
+func (c *Client) UpdateToken(token string) {
 	c.token = token
 }
 
-func (c *client) updateLastActiveTime() {
+func (c *Client) updateLastActiveTime() {
 	c.lastActiveTime = time.Now().Unix()
 }
 
-func (c *client) incCountRequest() {
+func (c *Client) incCountRequest() {
 	c.countRequests++
 }
 
-func (c client) GetLastActiveTimeAsString() string {
+func (c Client) GetLastActiveTimeAsString() string {
 	return strconv.FormatInt(c.lastActiveTime, 10)
 }
 
-func (c *client) GetCountRequestsAsString() string {
+func (c *Client) GetCountRequestsAsString() string {
 	return strconv.Itoa(c.countRequests)
 }
 
-func (c client) GetAddress() *net.UDPAddr {
+func (c Client) GetAddress() *net.UDPAddr {
 	return c.addr
+}
+
+func (c Client) GetToken() string {
+	return c.token
+}
+
+func (c Client) isValidToken(token string) bool {
+	return c.token == token
 }

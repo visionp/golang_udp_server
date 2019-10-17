@@ -5,5 +5,8 @@ import (
 )
 
 func main() {
-	server.Listen()
+	handlersCollection := &server.HandlersCollection{}
+
+	var serverUdp = server.Server{Handlers: handlersCollection}
+	serverUdp.Start(":3030")
 }
