@@ -5,11 +5,11 @@ type HandlerInterface interface {
 }
 
 type HandlersCollection struct {
-	handlers map[string]HandlerInterface
+	Handlers map[string]HandlerInterface
 }
 
 func (collection HandlersCollection) GetHandler(action string) HandlerInterface {
-	handler, ok := collection.handlers[action]
+	handler, ok := collection.Handlers[action]
 
 	if ok {
 		return handler
@@ -19,5 +19,5 @@ func (collection HandlersCollection) GetHandler(action string) HandlerInterface 
 }
 
 func (collection HandlersCollection) Add(action string, handler HandlerInterface) {
-	collection.handlers[action] = handler
+	collection.Handlers[action] = handler
 }

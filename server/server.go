@@ -13,7 +13,7 @@ type Server struct {
 }
 
 func (server Server) Start(port string) {
-	fmt.Printf("Server listening on port %s", port)
+	fmt.Printf("Server listening on port %s \n", port)
 
 	mutex := &sync.Mutex{}
 	list := make(map[string]*Client)
