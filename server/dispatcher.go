@@ -27,6 +27,8 @@ func (dis dispatcher) resolveRequest(req Request) Response {
 	}
 
 	client := dis.resolveClient(actionName, req)
+	client.updateState()
+
 	payload := Payload{}
 
 	if isHandShake {
@@ -45,32 +47,33 @@ func (dis dispatcher) getAction(action string) HandlerInterface {
 
 func (dis dispatcher) handShake(req Request) {
 	dis.mutex.Lock()
-	if dis.poolClients.HasClient(req.addr.String()) {
-		dis.mutex.Lock()
-		err := dis.poolClients.RemoveByAddr(req.addr.String())
-		dis.mutex.Unlock()
-		if err == nil {
-			fmt.Printf("Remove Client: %s \n", req.addr.String())
-		}
+	defer dis.mutex.Unlock()
+
+	err := dis.poolClients.RemoveByAddr(req.addr.String())
+	if err == nil {
 	}
-	dis.mutex.Unlock()
 }
 
 func (dis dispatcher) resolveClient(action string, req Request) *Client {
 	var cl *Client
 
 	dis.mutex.Lock()
+	defer dis.mutex.Unlock()
+
 	if dis.poolClients.HasClient(req.addr.String()) {
 		cl = dis.poolClients.GetClient(req.addr.String())
 	} else {
 		data, _ := req.GetPayload()
 		pid, _ := data["pid"]
 		token := fmt.Sprintf("%v", pid)
-		cl = &Client{req.addr, token, 0, 0}
+		cl = &Client{
+			addr:           req.addr,
+			token:          token,
+			lastActiveTime: 0,
+			countRequests:  0,
+		}
 		dis.poolClients.AddClient(cl)
 	}
-	cl.UpdateState()
-	dis.mutex.Unlock()
 
 	return cl
 }

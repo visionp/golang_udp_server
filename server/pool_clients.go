@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"github.com/pkg/errors"
 	"time"
 )
@@ -13,7 +14,7 @@ func (pool PoolClients) clean() int {
 	timeUnix := time.Now().Unix()
 	countCleaned := 0
 	for key, Client := range pool.list {
-		diff := timeUnix - Client.lastActiveTime
+		diff := timeUnix - Client.getLastActiveTime()
 
 		if diff > 20 {
 			err := pool.RemoveByAddr(key)
@@ -36,7 +37,7 @@ func (pool PoolClients) AddClient(c *Client) bool {
 
 	if !has {
 		pool.list[addr] = c
-		//fmt.Printf("Added new Client to pool %s \n", c.token)
+		fmt.Printf("Added new Client to pool %s \n", c.token)
 	}
 
 	return has
@@ -52,9 +53,11 @@ func (pool PoolClients) GetClient(addrStr string) *Client {
 func (pool PoolClients) RemoveByAddr(addrStr string) error {
 	if pool.HasClient(addrStr) {
 		delete(pool.list, addrStr)
+		fmt.Printf("Remove Client: %s \n", addrStr)
 		return nil
 	}
-	return errors.New("Client by this address is not found")
+
+	return errors.New("Client not found")
 }
 
 func (pool PoolClients) RemoveByClient(Client *Client) error {

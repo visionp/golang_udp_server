@@ -12,6 +12,8 @@ func (h handlerPing) Handle(req server.Request, client *server.Client) server.Pa
 	payload := make(server.Payload)
 	data, _ := req.GetPayload()
 
+	//fmt.Printf("Receive: %s \n\r", req.GetPayloadAsString())
+
 	payload["action"] = "pong"
 	payload["rand"] = fmt.Sprintf("%v", data["rand"])
 	payload["pid"] = fmt.Sprintf("%v", data["pid"])

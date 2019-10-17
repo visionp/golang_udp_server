@@ -17,7 +17,7 @@ func (server Server) Start(port string) {
 
 	mutex := &sync.Mutex{}
 	list := make(map[string]*Client)
-	poolClients := &PoolClients{list}
+	poolClients := &PoolClients{list: list}
 
 	disp := dispatcher{server.Handlers, poolClients, mutex}
 	requestCh := make(chan Request, 1024)
