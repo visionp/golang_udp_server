@@ -4,7 +4,7 @@ type dispatcher struct {
 	requestCh   chan request
 	responseCh  chan response
 	handler     handlerInterface
-	poolClients poolClients
+	poolClients *poolClients
 }
 
 func (dis dispatcher) Dispatch() {

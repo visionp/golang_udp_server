@@ -10,7 +10,7 @@ type client struct {
 	addr           *net.UDPAddr
 	token          string
 	lastActiveTime int64
-	countRequests  uint64
+	countRequests  int
 }
 
 func (c *client) UpdateState() {
@@ -18,13 +18,16 @@ func (c *client) UpdateState() {
 	c.updateLastActiveTime()
 }
 
+func (c *client) UpdateToken(token string) {
+	c.token = token
+}
+
 func (c *client) updateLastActiveTime() {
 	c.lastActiveTime = time.Now().Unix()
 }
 
-func (c *client) incCountRequest() uint64 {
-	c.countRequests++
-	return c.countRequests
+func (c *client) incCountRequest() {
+	c.countRequests += 1
 }
 
 func (c client) GetLastActiveTimeAsString() string {
@@ -32,7 +35,7 @@ func (c client) GetLastActiveTimeAsString() string {
 }
 
 func (c *client) GetCountRequestsAsString() string {
-	return strconv.FormatUint(c.countRequests, 10)
+	return strconv.Itoa(c.countRequests)
 }
 
 func (c client) GetAddress() *net.UDPAddr {

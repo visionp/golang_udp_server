@@ -7,11 +7,10 @@ import (
 )
 
 func Listen() {
-	fmt.Println("Start listen")
+	list := make(map[string]*client)
 	handlerFunc := handler{}
 
-	list := make(map[string]client)
-	poolClients := poolClients{list, false}
+	poolClients := &poolClients{list, false}
 	err := poolClients.Init()
 	if err != nil {
 		fmt.Println(err)
@@ -45,6 +44,7 @@ func Listen() {
 	go func() {
 		disp.Dispatch()
 	}()
+
 	go func() {
 		for {
 			res := <-responseCh

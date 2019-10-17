@@ -7,7 +7,7 @@ import (
 )
 
 type poolClients struct {
-	list   map[string]client
+	list   map[string]*client
 	isInit bool
 }
 
@@ -46,19 +46,19 @@ func (pool poolClients) HasClient(addrStr string) bool {
 	return ok
 }
 
-func (pool poolClients) AddClient(c client) bool {
+func (pool poolClients) AddClient(c *client) bool {
 	addr := c.addr.String()
 	has := pool.HasClient(addr)
 
 	if !has {
 		pool.list[addr] = c
-		fmt.Println("Added new client to pool")
+		fmt.Printf("Added new client to pool %s \n", c.token)
 	}
 
 	return has
 }
 
-func (pool poolClients) GetClient(addrStr string) client {
+func (pool poolClients) GetClient(addrStr string) *client {
 	if !pool.HasClient(addrStr) {
 		panic("Client not found")
 	}
@@ -73,6 +73,6 @@ func (pool poolClients) RemoveByAddr(addrStr string) error {
 	return errors.New("Client by this address is not found")
 }
 
-func (pool poolClients) RemoveByClient(client client) error {
+func (pool poolClients) RemoveByClient(client *client) error {
 	return pool.RemoveByAddr(client.addr.String())
 }
