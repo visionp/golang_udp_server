@@ -8,13 +8,18 @@ import (
 type dispatcher struct {
 	handlers    *HandlersCollection
 	poolClients *PoolClients
+	clientsCh   chan *Client
 	mutex       *sync.Mutex
 }
 
 func (dis dispatcher) Dispatch(RequestCh chan Request, ResponseCh chan Response) {
 	for {
-		req := <-RequestCh
-		ResponseCh <- dis.resolveRequest(req)
+		select {
+		case req := <-RequestCh:
+			ResponseCh <- dis.resolveRequest(req)
+		case cl := <-dis.clientsCh:
+			cl.updateState()
+		}
 	}
 }
 
@@ -27,7 +32,10 @@ func (dis dispatcher) resolveRequest(req Request) Response {
 	}
 
 	client := dis.resolveClient(actionName, req)
-	client.updateState()
+
+	if actionName != "ping" {
+		dis.clientsCh <- client
+	}
 
 	payload := Payload{}
 

@@ -28,6 +28,7 @@ func main() {
 	handlersCollection := &server.HandlersCollection{Handlers: m}
 
 	handlersCollection.Add("ping", handlerPing{})
+	handlersCollection.Add("action", handlerPing{})
 	var serverUdp = server.Server{Handlers: handlersCollection}
 	serverUdp.Start(":3030")
 }

@@ -16,7 +16,7 @@ func (pool PoolClients) clean() int {
 	for key, Client := range pool.list {
 		diff := timeUnix - Client.getLastActiveTime()
 
-		if diff > 20 {
+		if diff > 600 {
 			err := pool.RemoveByAddr(key)
 			if err == nil {
 				countCleaned++

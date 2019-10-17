@@ -19,18 +19,20 @@ func (server Server) Start(port string) {
 	list := make(map[string]*Client)
 	poolClients := &PoolClients{list: list}
 
-	disp := dispatcher{server.Handlers, poolClients, mutex}
+	clientsCh := make(chan *Client, 1024)
 	requestCh := make(chan Request, 1024)
 	responseCh := make(chan Response, 1024)
 
-	ticker := time.NewTicker(time.Second * 20)
+	disp := dispatcher{server.Handlers, poolClients, clientsCh, mutex}
+
+	ticker := time.NewTicker(time.Second * 600)
 
 	go func() {
 		for t := range ticker.C {
 			mutex.Lock()
 			countRemoved := poolClients.clean()
 			mutex.Unlock()
-			fmt.Println("Pool cleaned: ", countRemoved, ", time ", t)
+			fmt.Printf("Pool cleaned: %d, date: %s \n\r", countRemoved, t)
 		}
 	}()
 
@@ -50,6 +52,7 @@ func (server Server) Start(port string) {
 		err = connection.Close()
 		if err != nil {
 			fmt.Println(err)
+			return
 		}
 	}()
 
