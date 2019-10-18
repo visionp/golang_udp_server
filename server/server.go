@@ -25,7 +25,7 @@ func (server Server) Start(port string) {
 
 	disp := dispatcher{server.Handlers, poolClients, clientsCh, mutex}
 
-	ticker := time.NewTicker(time.Second * 600)
+	ticker := time.NewTicker(time.Second * 30)
 
 	go func() {
 		for t := range ticker.C {
@@ -56,19 +56,18 @@ func (server Server) Start(port string) {
 		}
 	}()
 
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 2600; i++ {
 		go disp.Dispatch(requestCh, responseCh)
-	}
-
-	go func() {
-		for {
-			res := <-responseCh
-			_, err = connection.WriteToUDP(res.GetPayload(), res.addr)
-			if err != nil {
-				fmt.Println(err)
+		go func() {
+			for {
+				res := <-responseCh
+				_, err = connection.WriteToUDP(res.GetPayload(), res.addr)
+				if err != nil {
+					fmt.Println(err)
+				}
 			}
-		}
-	}()
+		}()
+	}
 
 	for {
 		buffer := make([]byte, 1024)
