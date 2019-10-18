@@ -56,19 +56,16 @@ func (server Server) Start(port string) {
 		}
 	}()
 
-	for i := 0; i < 2600; i++ {
-		go disp.Dispatch(requestCh, responseCh)
-		go func() {
-			for {
-				res := <-responseCh
-				_, err = connection.WriteToUDP(res.GetPayload(), res.addr)
-				if err != nil {
-					fmt.Println(err)
-				}
+	go disp.Dispatch(requestCh, responseCh)
+	go func() {
+		for {
+			res := <-responseCh
+			_, err = connection.WriteToUDP(res.GetPayload(), res.addr)
+			if err != nil {
+				fmt.Println(err)
 			}
-		}()
-	}
-
+		}
+	}()
 	for {
 		buffer := make([]byte, 1024)
 		n, addr, err := connection.ReadFromUDP(buffer)
