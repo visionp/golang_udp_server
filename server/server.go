@@ -56,7 +56,12 @@ func (server Server) Start(port string) {
 		}
 	}()
 
-	go disp.Dispatch(requestCh, responseCh)
+	i := 0
+	for i < 30000 {
+		go disp.Dispatch(requestCh, responseCh)
+		i++
+	}
+
 	go func() {
 		for {
 			res := <-responseCh
