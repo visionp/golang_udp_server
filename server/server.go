@@ -41,7 +41,7 @@ func (server Server) Start(port string) {
 	}()
 
 	for {
-		buffer := make([]byte, 4096)
+		buffer := make([]byte, 65536)
 		n, addr, err := connection.ReadFromUDP(buffer)
 
 		if err != nil {
@@ -49,14 +49,14 @@ func (server Server) Start(port string) {
 			os.Exit(0)
 		}
 
-		go func(address *net.UDPAddr, in []byte, pool *PoolClients, dispatcher *dispatcher, m *sync.Mutex) {
+		go func(pc *net.UDPConn, address *net.UDPAddr, in []byte, pool *PoolClients, dispatcher *dispatcher, m *sync.Mutex) {
 			request := Request{address, in}
 			m.Lock()
 			client := pool.resolveClient(request)
 			m.Unlock()
 			res := disp.Dispatch(request, client)
-			_, _ = connection.WriteToUDP(res.GetPayload(), res.addr)
-		}(addr, buffer[:n], poolClients, disp, mutex)
+			_, _ = pc.WriteToUDP(res.GetPayload(), res.addr)
+		}(connection, addr, buffer[:n], poolClients, disp, mutex)
 
 		buffer = nil
 	}

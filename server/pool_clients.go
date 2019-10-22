@@ -52,7 +52,7 @@ func (pool PoolClients) AddClient(c *Client) bool {
 
 	if !has {
 		pool.list[addr] = c
-		fmt.Printf("Added new Client to pool %s \n", c.token)
+		//fmt.Printf("Added new Client to pool %s \n", c.token)
 	}
 
 	return has
