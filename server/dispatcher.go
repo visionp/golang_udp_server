@@ -5,15 +5,13 @@ import (
 )
 
 type dispatcher struct {
-	mutex      *sync.Mutex
-	handlers   *HandlersCollection
-	responseCh chan Response
+	mutex    *sync.Mutex
+	handlers *HandlersCollection
 }
 
-func (dis dispatcher) Dispatch(request Request, client *Client) {
+func (dis dispatcher) Dispatch(request Request, client *Client) Response {
 	dis.debug("Start dispatch")
-	dis.responseCh <- dis.resolveRequest(request, client)
-	dis.debug("Dispatched")
+	return dis.resolveRequest(request, client)
 }
 
 func (dis dispatcher) resolveRequest(req Request, client *Client) Response {

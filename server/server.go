@@ -14,13 +14,11 @@ type Server struct {
 func (server Server) Start(port string) {
 	fmt.Printf("Server listening on port %s \n", port)
 
-	responseCh := make(chan Response, 4096)
-
 	mutex := &sync.Mutex{}
 	list := make(map[string]*Client)
 	poolClients := &PoolClients{mutex: mutex, list: list}
 
-	disp := dispatcher{mutex, server.Handlers, responseCh}
+	disp := &dispatcher{mutex, server.Handlers}
 
 	s, err := net.ResolveUDPAddr("udp4", port)
 	if err != nil {
@@ -42,31 +40,25 @@ func (server Server) Start(port string) {
 		}
 	}()
 
-	go func() {
-		for {
-			res := <-responseCh
-			_, err = connection.WriteToUDP(res.GetPayload(), res.addr)
-			if err != nil {
-				fmt.Println(err)
-			}
-		}
-	}()
-
 	for {
 		buffer := make([]byte, 4096)
 		n, addr, err := connection.ReadFromUDP(buffer)
+
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(0)
 		}
 
-		go func(address *net.UDPAddr, in []byte, pool *PoolClients, m *sync.Mutex) {
-			request := Request{addr, buffer[:n]}
+		go func(address *net.UDPAddr, in []byte, pool *PoolClients, dispatcher *dispatcher, m *sync.Mutex) {
+			request := Request{address, in}
 			m.Lock()
-			client := poolClients.resolveClient(request)
+			client := pool.resolveClient(request)
 			m.Unlock()
-			disp.Dispatch(request, client)
-		}(addr, buffer, poolClients, mutex)
+			res := disp.Dispatch(request, client)
+			_, _ = connection.WriteToUDP(res.GetPayload(), res.addr)
+		}(addr, buffer[:n], poolClients, disp, mutex)
+
+		buffer = nil
 	}
 
 }
