@@ -10,18 +10,13 @@ type handlerPing struct {
 }
 
 func (h handlerPing) Handle(req server.Request, client *server.Client) server.Payload {
-	fmt.Println("Start handle")
 	payload := make(server.Payload)
-	fmt.Println("GetPayload")
 	data, _ := req.GetPayload()
 
 	payload["action"] = "pong"
 	payload["pid"] = fmt.Sprintf("%v", data["pid"])
-	fmt.Println("GetToken")
-	//payload["token"] = client.GetToken()
-	fmt.Println("GetCountRequestsAsString")
+	payload["token"] = client.GetToken()
 	payload["count_requests"] = client.GetCountRequestsAsString()
-	fmt.Println("Before return")
 
 	return payload
 }
@@ -47,7 +42,7 @@ type realMetricHandler struct {
 func (h realMetricHandler) Handle(req server.Request, client *server.Client) server.Payload {
 	payload := make(server.Payload)
 
-	//payload["_timing"], payload["error"] = h.realMetricTrack(req.Payload)
+	payload["_timing"], payload["error"] = h.realMetricTrack(req.Payload)
 
 	payload["action"] = "track"
 	payload["token"] = client.GetToken()

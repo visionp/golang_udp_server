@@ -60,11 +60,13 @@ func (server Server) Start(port string) {
 			os.Exit(0)
 		}
 
-		go func(address *net.UDPAddr, in []byte, pool *PoolClients) {
+		go func(address *net.UDPAddr, in []byte, pool *PoolClients, m *sync.Mutex) {
 			request := Request{addr, buffer[:n]}
+			m.Lock()
 			client := poolClients.resolveClient(request)
+			m.Unlock()
 			disp.Dispatch(request, client)
-		}(addr, buffer, poolClients)
+		}(addr, buffer, poolClients, mutex)
 	}
 
 }

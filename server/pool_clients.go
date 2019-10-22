@@ -30,7 +30,9 @@ func (pool PoolClients) clean() int {
 		diff := timeUnix - Client.getLastActiveTime()
 
 		if diff > 600 {
+			pool.mutex.Lock()
 			err := pool.RemoveByAddr(key)
+			pool.mutex.Unlock()
 			if err == nil {
 				countCleaned++
 			}
