@@ -5,7 +5,6 @@ import (
 	"net"
 	"os"
 	"sync"
-	"time"
 )
 
 type Server struct {
@@ -15,26 +14,13 @@ type Server struct {
 func (server Server) Start(port string) {
 	fmt.Printf("Server listening on port %s \n", port)
 
+	responseCh := make(chan Response, 4096)
+
 	mutex := &sync.Mutex{}
 	list := make(map[string]*Client)
-	poolClients := &PoolClients{list: list}
+	poolClients := &PoolClients{mutex: mutex, list: list}
 
-	clientsCh := make(chan *Client, 1024)
-	requestCh := make(chan Request, 1024)
-	responseCh := make(chan Response, 1024)
-
-	disp := dispatcher{server.Handlers, poolClients, clientsCh, mutex}
-
-	ticker := time.NewTicker(time.Second * 30)
-
-	go func() {
-		for t := range ticker.C {
-			mutex.Lock()
-			countRemoved := poolClients.clean()
-			mutex.Unlock()
-			fmt.Printf("Pool cleaned: %d, date: %s \n\r", countRemoved, t)
-		}
-	}()
+	disp := dispatcher{mutex, server.Handlers, responseCh}
 
 	s, err := net.ResolveUDPAddr("udp4", port)
 	if err != nil {
@@ -56,12 +42,6 @@ func (server Server) Start(port string) {
 		}
 	}()
 
-	i := 0
-	for i < 30000 {
-		go disp.Dispatch(requestCh, responseCh)
-		i++
-	}
-
 	go func() {
 		for {
 			res := <-responseCh
@@ -71,15 +51,20 @@ func (server Server) Start(port string) {
 			}
 		}
 	}()
+
 	for {
-		buffer := make([]byte, 1024)
+		buffer := make([]byte, 4096)
 		n, addr, err := connection.ReadFromUDP(buffer)
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(0)
 		}
 
-		requestCh <- Request{addr, buffer[:n]}
+		go func(address *net.UDPAddr, in []byte, pool *PoolClients) {
+			request := Request{addr, buffer[:n]}
+			client := poolClients.resolveClient(request)
+			disp.Dispatch(request, client)
+		}(addr, buffer, poolClients)
 	}
 
 }

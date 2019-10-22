@@ -1,0 +1,16 @@
+//this is a sample of config.json5
+{
+  db: {
+    host: "127.0.0.1",
+    port: 3306,
+    user: "root",
+    password: "root",
+    database: "realmetric",
+    charset: "utf8",
+    timeout: 2
+  },
+  MetricNameValidationRegexp: "[^A-Za-z0-9_.]+",
+  SliceNameValidationRegexp: "[^A-Za-z0-9_.]+",
+  FlushToDbInterval: 1,
+  FlushTotalsInterval: 5,
+}
